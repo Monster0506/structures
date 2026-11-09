@@ -183,6 +183,8 @@ def require_index(index, base):
     if type(index) is float and not index.is_integer():
         raise TypeError("Index must be an integer")
     index = int(index)
+    if index < 0:
+        index += len(base)
     if not (0 <= index < len(base)):
         raise IndexError("Index out of range")
     return index
