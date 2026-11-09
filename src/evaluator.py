@@ -649,8 +649,14 @@ def evaluate(ast, environment):
             if status is not None:
                 return value, status
             arguments.append(value)
-        if any(type(argument) is not int for argument in arguments):
-            raise TypeError("range arguments must be integers")
+        for index, value in enumerate(arguments):
+            if type(value) is str and re.fullmatch(r"[+-]?(?:\d*\.\d+|\d+\.\d*|\d+)", value.strip()):
+                value = float(value) if "." in value else int(value)
+            if type(value) is float and value.is_integer():
+                value = int(value)
+            if type(value) is not int:
+                raise TypeError("range arguments must be whole numbers")
+            arguments[index] = value
         if arguments[2] == 0:
             raise ValueError("range step must not be zero")
         values = range(*arguments)

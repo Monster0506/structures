@@ -19,11 +19,13 @@ class RangeTests(unittest.TestCase):
             ('range(10, 2, -2)', [10, 8, 6, 4]),
             ('range(5, 0, step)', [5, 2]),
             ('range(3, -1, -1)', [3, 2, 1, 0]),
-            ('range(0, 1, 5)', [0]),
             ('range(0, 0, 1)', []),
             ('range(0, 0, -1)', []),
             ('range(5, 0, 1)', []),
             ('range(0, 5, -1)', []),
+            ('range(0.0, ten / 2, 2.0)', [0, 2, 4]),
+            ('range("2", " 10 ", "+2")', [2, 4, 6, 8]),
+            ('range("4.0", "-1", "-2.0")', [4, 2, 0]),
         ]
         for source, expected in cases:
             with self.subTest(source=source):
@@ -35,13 +37,15 @@ class RangeTests(unittest.TestCase):
             ('range(0, 5, 0)', ValueError, 'range step must not be zero'),
             ('range(0, 1000001, 1)', ValueError,
              'range must not produce more than 1000000 elements'),
-            ('range(true, 5, 1)', TypeError, 'range arguments must be integers'),
-            ('range(0, false, 1)', TypeError, 'range arguments must be integers'),
-            ('range(0, 5, 1.5)', TypeError, 'range arguments must be integers'),
-            ('range(0.0, 5, 1)', TypeError, 'range arguments must be integers'),
-            ('range("0", 5, 1)', TypeError, 'range arguments must be integers'),
-            ('range(0, [5], 1)', TypeError, 'range arguments must be integers'),
-            ('range(0, 5, null)', TypeError, 'range arguments must be integers'),
+            ('range(true, 5, 1)', TypeError, 'range arguments must be whole numbers'),
+            ('range(0, false, 1)', TypeError, 'range arguments must be whole numbers'),
+            ('range(0, 5, 1.5)', TypeError, 'range arguments must be whole numbers'),
+            ('range("0.5", 5, 1)', TypeError, 'range arguments must be whole numbers'),
+            ('range("1e3", 5, 1)', TypeError, 'range arguments must be whole numbers'),
+            ('range("two", 5, 1)', TypeError, 'range arguments must be whole numbers'),
+            ('range(0, [5], 1)', TypeError, 'range arguments must be whole numbers'),
+            ('range(0, 5, null)', TypeError, 'range arguments must be whole numbers'),
+            ('range(0, 5, "0")', ValueError, 'range step must not be zero'),
         ]
         for source, error, message in cases:
             with self.subTest(source=source):
