@@ -80,7 +80,8 @@ from tokenizer import tokenize
 #   freely in one chain: a[1].bob[3][4].a.b["dog"].
 #
 #   ===== CHAPTER 11: call_suffix is the promised extension =====
-#   call_suffix ::= "(" [ expression { "," expression } ] ")"
+#   call_suffix ::= "(" [ argument { "," argument } ] ")"
+#   argument ::= [ <identifier> ":" ] expression
 #   A call produces a "call" node, not another "complex" one: it takes an
 #   argument list, not a single index, so it is a sibling in the same
 #   suffix chain rather than a third meaning crammed into "complex". All
@@ -318,7 +319,8 @@ def parse_complex_suffixes(node, tokens):
 
 def parse_call_arguments(tokens):
     # ===== CHAPTER 11 =====
-    # call_suffix ::= "(" [ expression { "," expression } ] ")"
+    # call_suffix ::= "(" [ argument { "," argument } ] ")"
+    # argument ::= [ <identifier> ":" ] expression
     tokens = require(tokens, "(", "Expected '('")
     arguments = []
     keywords = []
