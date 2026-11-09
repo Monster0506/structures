@@ -309,8 +309,10 @@ def parse_complex_suffixes(node, tokens):
             tokens = tokens[1:]
             node = {"tag": "complex", "base": node, "index": index}
         else:
-            arguments, tokens = parse_call_arguments(tokens)
+            arguments, keywords, tokens = parse_call_arguments(tokens)
             node = {"tag": "call", "callee": node, "arguments": arguments}
+            if keywords:
+                node["keywords"] = keywords
     return node, tokens
 
 
@@ -319,14 +321,23 @@ def parse_call_arguments(tokens):
     # call_suffix ::= "(" [ expression { "," expression } ] ")"
     tokens = require(tokens, "(", "Expected '('")
     arguments = []
+    keywords = []
     if tokens[0]["tag"] != ")":
-        argument, tokens = parse_expression(tokens)
-        arguments.append(argument)
-        while tokens[0]["tag"] == ",":
-            argument, tokens = parse_expression(tokens[1:])
-            arguments.append(argument)
+        while True:
+            if tokens[0]["tag"] == "identifier" and tokens[1]["tag"] == ":":
+                name = tokens[0]["value"]
+                argument, tokens = parse_expression(tokens[2:])
+                keywords.append((name, argument))
+            elif keywords:
+                raise SyntaxError(f"Positional argument cannot follow a keyword argument, got {tokens[0]}")
+            else:
+                argument, tokens = parse_expression(tokens)
+                arguments.append(argument)
+            if tokens[0]["tag"] != ",":
+                break
+            tokens = tokens[1:]
     tokens = require(tokens, ")", "Expected ')' to close argument list")
-    return arguments, tokens
+    return arguments, keywords, tokens
 
 
 def parse_complex_expression(tokens):
