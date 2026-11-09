@@ -458,6 +458,7 @@ def evaluate(ast, environment):
         function_count += 1
         return {FUNCTION_KEY: function_count,
                 "parameters": ast["parameters"],
+                "rest": ast.get("rest"),
                 "body": ast["body"],
                 "environment": environment}, None
 
@@ -550,7 +551,13 @@ def evaluate(ast, environment):
             if status is not None:
                 return value, status
             arguments.append(value)
-        if len(arguments) != len(callee["parameters"]):
+        if callee.get("rest") is not None:
+            if len(arguments) < len(callee["parameters"]):
+                raise TypeError(
+                    f"Function expects at least {len(callee['parameters'])} argument(s), "
+                    f"got {len(arguments)}"
+                )
+        elif len(arguments) != len(callee["parameters"]):
             raise TypeError(
                 f"Function expects {len(callee['parameters'])} argument(s), "
                 f"got {len(arguments)}"
@@ -569,6 +576,8 @@ def evaluate(ast, environment):
         call_environment = {PARENT_KEY: callee["environment"]}
         for name, value in zip(callee["parameters"], arguments):
             call_environment[name] = value
+        if callee.get("rest") is not None:
+            call_environment[callee["rest"]] = arguments[len(callee["parameters"]):]
         value, status = evaluate(callee["body"], call_environment)
         if status == "return":
             return value, None
