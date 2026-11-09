@@ -642,6 +642,22 @@ def evaluate(ast, environment):
             raise IndexError("Slice start must not be greater than end")
         return value[start:end], None
 
+    if ast["tag"] == "range":
+        arguments = []
+        for key in ("start", "stop", "step"):
+            value, status = evaluate(ast[key], environment)
+            if status is not None:
+                return value, status
+            arguments.append(value)
+        if any(type(argument) is not int for argument in arguments):
+            raise TypeError("range arguments must be integers")
+        if arguments[2] == 0:
+            raise ValueError("range step must not be zero")
+        values = range(*arguments)
+        if len(values) > 1000000:
+            raise ValueError("range must not produce more than 1000000 elements")
+        return list(values), None
+
     # ===== CHAPTER 3: dedicated input expression =====
     if ast["tag"] == "input":
         prompt_ast = ast["prompt"]
