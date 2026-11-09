@@ -541,20 +541,31 @@ def parse_function_tail(tokens):
     # after the "function" keyword has already been consumed:
     #   "(" [ <identifier> { "," <identifier> } ] ")" block
     parameters = []
+    rest = None
     tokens = require(tokens, "(", "Expected '(' after 'function'")
     if tokens[0]["tag"] != ")":
-        if tokens[0]["tag"] != "identifier":
-            raise SyntaxError(f"Expected a parameter name, got {tokens[0]}")
-        parameters.append(tokens[0]["value"])
-        tokens = tokens[1:]
-        while tokens[0]["tag"] == ",":
-            if tokens[1]["tag"] != "identifier":
-                raise SyntaxError(f"Expected a parameter name, got {tokens[1]}")
-            parameters.append(tokens[1]["value"])
-            tokens = tokens[2:]
+        while True:
+            is_rest = tokens[0]["tag"] == "..."
+            if is_rest:
+                tokens = tokens[1:]
+            if tokens[0]["tag"] != "identifier":
+                raise SyntaxError(f"Expected a parameter name, got {tokens[0]}")
+            if is_rest:
+                rest = tokens[0]["value"]
+            else:
+                parameters.append(tokens[0]["value"])
+            tokens = tokens[1:]
+            if tokens[0]["tag"] != ",":
+                break
+            if is_rest:
+                raise SyntaxError("Rest parameter must be the last parameter")
+            tokens = tokens[1:]
     tokens = require(tokens, ")", "Expected ')' after parameter list")
     body, tokens = parse_block(tokens)
-    return {"tag": "function", "parameters": parameters, "body": body}, tokens
+    function = {"tag": "function", "parameters": parameters, "body": body}
+    if rest is not None:
+        function["rest"] = rest
+    return function, tokens
 
 
 def parse_function_expression(tokens):
