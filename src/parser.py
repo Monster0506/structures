@@ -364,7 +364,9 @@ def parse_arithmetic_expression(tokens):
 
 
 def parse_comparison(tokens):
-    """comparison ::= arithmetic_expression [ compare_op arithmetic_expression ]"""
+    """comparison ::= arithmetic_expression [ compare_op arithmetic_expression ]
+    compare_op ::= "==" | "!=" | "<" | "<=" | ">" | ">=" | "in"
+    """
     # Arithmetic binds more tightly than comparisons: 1 + 2 < 4 compares 3 to 4.
     left, tokens = parse_arithmetic_expression(tokens)
     # One optional operator, not a loop: unparenthesized comparison chains are
