@@ -905,6 +905,8 @@ def evaluate(ast, environment):
             return left - right, None
         if ast["tag"] == "*":
             return left * right, None
+        if type(left) in (int, float) and right == 0:
+            raise ZeroDivisionError("Division by zero")
         return left / right, None
 
     if ast["tag"] == "print":
