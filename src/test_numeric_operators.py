@@ -51,6 +51,8 @@ class NumericOperatorTests(unittest.TestCase):
             ('2 % false', TypeError, 'Arithmetic does not accept boolean operands'),
             ('"%d" % 5', TypeError, 'Operator % requires two numbers'),
             ('"ab" ** 2', TypeError, 'Operator ** requires two numbers'),
+            ('17 / 0', ZeroDivisionError, 'Division by zero'),
+            ('half / 0.0', ZeroDivisionError, 'Division by zero'),
             ('17 % 0', ZeroDivisionError, 'Remainder by zero'),
             ('17 % 0.0', ZeroDivisionError, 'Remainder by zero'),
             ('0 ** -1', ZeroDivisionError, 'Cannot raise zero to a negative power'),
