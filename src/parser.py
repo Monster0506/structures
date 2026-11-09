@@ -123,9 +123,9 @@ from tokenizer import tokenize
 #   list the copy is deep: nested lists are new lists too, all the way down.
 #
 #   ===== CHAPTER 11: functions =====
-#   function_expression ::= "function" "(" [ <identifier> { "," <identifier> } ] ")" block
+#   function_expression ::= "function" "(" [ <identifier> { "," <identifier> } [ "," "..." <identifier> ] | "..." <identifier> ] ")" block
 #   function_definition ::= "function" <identifier>
-#                            "(" [ <identifier> { "," <identifier> } ] ")" block
+#                            "(" [ <identifier> { "," <identifier> } [ "," "..." <identifier> ] | "..." <identifier> ] ")" block
 #   return_statement ::= "return" [ expression ]
 #   A function expression is a factor: a value, like any other, with no
 #   name of its own. function_definition is pure syntactic sugar for an
@@ -539,7 +539,7 @@ def parse_function_tail(tokens):
     # ===== CHAPTER 11 =====
     # Shared by the expression and statement forms below, starting right
     # after the "function" keyword has already been consumed:
-    #   "(" [ <identifier> { "," <identifier> } ] ")" block
+    #   "(" [ <identifier> { "," <identifier> } [ "," "..." <identifier> ] | "..." <identifier> ] ")" block
     parameters = []
     rest = None
     tokens = require(tokens, "(", "Expected '(' after 'function'")
@@ -570,7 +570,7 @@ def parse_function_tail(tokens):
 
 def parse_function_expression(tokens):
     # ===== CHAPTER 11 =====
-    # function_expression ::= "function" "(" [ <identifier> { "," <identifier> } ] ")" block
+    # function_expression ::= "function" "(" [ <identifier> { "," <identifier> } [ "," "..." <identifier> ] | "..." <identifier> ] ")" block
     # This is where the actual work happens: a function expression is a
     # factor, a value like any other, with no name of its own. It can be
     # assigned, passed as an argument, returned, or called immediately --
@@ -583,7 +583,7 @@ def parse_function_expression(tokens):
 def parse_function_definition(tokens):
     # ===== CHAPTER 11 =====
     # function_definition ::= "function" <identifier>
-    #                          "(" [ <identifier> { "," <identifier> } ] ")" block
+    #                          "(" [ <identifier> { "," <identifier> } [ "," "..." <identifier> ] | "..." <identifier> ] ")" block
     # Purely syntactic sugar: a named definition is exactly an assignment
     # of a function expression to that name, resolved here so nothing
     # downstream of parsing -- the evaluator least of all -- ever needs to
