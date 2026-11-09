@@ -459,6 +459,8 @@ def parse_statement(tokens):
         return {"tag": "break"}, tokens[1:]
     if tokens[0]["tag"] == "continue":
         return {"tag": "continue"}, tokens[1:]
+    if tokens[0]["tag"] == "for":
+        return parse_for_statement(tokens)
     # ===== CHAPTER 11 =====
     # "function" alone is ambiguous: an identifier right after it means the
     # named-definition sugar, statement-only syntax with no expression-level
@@ -533,6 +535,27 @@ def parse_while_statement(tokens):
     tokens = require(tokens, ")", "Expected ')' after while condition")
     body, tokens = parse_block(tokens)
     return {"tag": "while", "condition": condition, "body": body}, tokens
+
+
+def parse_for_statement(tokens):
+    tokens = require(tokens, "for", "Expected 'for'")
+    tokens = require(tokens, "(", "Expected '(' after 'for'")
+    statements = []
+    if tokens[0]["tag"] != ";":
+        initializer, tokens = parse_expression(tokens)
+        statements.append(initializer)
+    tokens = require(tokens, ";", "Expected ';' after for initializer")
+    condition = {"tag": "boolean", "value": True}
+    if tokens[0]["tag"] != ";":
+        condition, tokens = parse_expression(tokens)
+    tokens = require(tokens, ";", "Expected ';' after for condition")
+    loop = {"tag": "while", "condition": condition}
+    if tokens[0]["tag"] != ")":
+        loop["update"], tokens = parse_expression(tokens)
+    tokens = require(tokens, ")", "Expected ')' after for update")
+    loop["body"], tokens = parse_block(tokens)
+    statements.append(loop)
+    return {"tag": "statement_list", "statements": statements}, tokens
 
 
 def parse_function_tail(tokens):
