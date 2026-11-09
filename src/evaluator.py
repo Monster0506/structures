@@ -458,6 +458,7 @@ def evaluate(ast, environment):
         function_count += 1
         return {FUNCTION_KEY: function_count,
                 "parameters": ast["parameters"],
+                "defaults": ast.get("defaults", []),
                 "body": ast["body"],
                 "environment": environment}, None
 
@@ -550,9 +551,12 @@ def evaluate(ast, environment):
             if status is not None:
                 return value, status
             arguments.append(value)
-        if len(arguments) != len(callee["parameters"]):
+        defaults = callee.get("defaults", [])
+        required = len(callee["parameters"]) - len(defaults)
+        if not required <= len(arguments) <= len(callee["parameters"]):
+            expected = f"{required} to {len(callee['parameters'])}" if defaults else required
             raise TypeError(
-                f"Function expects {len(callee['parameters'])} argument(s), "
+                f"Function expects {expected} argument(s), "
                 f"got {len(arguments)}"
             )
         # ===== CHAPTER 13 =====
@@ -567,7 +571,13 @@ def evaluate(ast, environment):
         # ===== Lexical scoping =====
         # Arguments still use the caller; the body uses the defining scope.
         call_environment = {PARENT_KEY: callee["environment"]}
-        for name, value in zip(callee["parameters"], arguments):
+        for index, name in enumerate(callee["parameters"]):
+            if index < len(arguments):
+                call_environment[name] = arguments[index]
+                continue
+            value, status = evaluate(defaults[index - required], call_environment)
+            if status is not None:
+                return value, status
             call_environment[name] = value
         value, status = evaluate(callee["body"], call_environment)
         if status == "return":
