@@ -55,6 +55,9 @@ patterns = [
     # ===== CHAPTER 7: conditional keywords =====
     (r"if\b", "if"),
     (r"else\b", "else"),
+    (r"switch\b", "switch"),
+    (r"case\b", "case"),
+    (r"default\b", "default"),
 
     # ===== CHAPTER 8: loop keywords =====
     (r"while\b", "while"),
