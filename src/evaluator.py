@@ -962,6 +962,10 @@ def evaluate(ast, environment):
                 # not own: pass it outward without finishing the loop.
                 return value, status
             # Normal completion and "continue" both return to the condition.
+            if "update" in ast:
+                value, status = evaluate(ast["update"], environment)
+                if status is not None:
+                    return value, status
 
     if ast["tag"] == "program":
         globals_ = io_environment(environment)

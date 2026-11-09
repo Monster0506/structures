@@ -60,6 +60,7 @@ patterns = [
     (r"while\b", "while"),
     (r"break\b", "break"),
     (r"continue\b", "continue"),
+    (r"for\b", "for"),
 
     # ===== CHAPTER 12: update an existing lexical binding =====
     (r"set\b", "set"),
