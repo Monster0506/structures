@@ -808,6 +808,24 @@ def evaluate(ast, environment):
             else:
                 raise TypeError("Indexed assignment requires a list or object")
             destination = base
+        elif target["tag"] == "list":
+            names = []
+            for item in target["items"]:
+                if item["tag"] != "identifier":
+                    raise ValueError(f"Cannot assign to a {item['tag']} expression inside a list pattern")
+                if item["value"] in names:
+                    raise ValueError(f"Cannot assign to the same variable twice in a list pattern: {item['value']}")
+                names.append(item["value"])
+            value, status = evaluate(ast["expression"], environment)
+            if status is not None:
+                return value, status
+            if type(value) is not list:
+                raise TypeError("List pattern assignment requires a list")
+            if len(value) != len(names):
+                raise ValueError(f"List pattern expects {len(names)} items but got {len(value)}")
+            for name, item in zip(names, value):
+                environment[name] = item
+            return value, None
         else:
             raise ValueError(f"Cannot assign to a {target['tag']} expression")
         value, status = evaluate(ast["expression"], environment)
