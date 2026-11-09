@@ -490,6 +490,20 @@ def evaluate(ast, environment):
         return result, None
 
     if ast["tag"] == "list":
+        if "source" in ast:
+            source, status = evaluate(ast["source"], environment)
+            if status is not None:
+                return source, status
+            if type(source) is not list:
+                raise TypeError("list comprehension source must be a list")
+            items = []
+            for element in source:
+                scope = {PARENT_KEY: environment, ast["variable"]: element}
+                value, status = evaluate(ast["items"][0], scope)
+                if status is not None:
+                    return value, status
+                items.append(value)
+            return items, None
         items = []
         for element in ast["items"]:
             value, status = evaluate(element, environment)

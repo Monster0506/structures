@@ -245,6 +245,14 @@ def parse_list_expression(tokens):
     if tokens[0]["tag"] != "]":
         item, tokens = parse_expression(tokens)
         items.append(item)
+        if tokens[0]["tag"] == "for":
+            variable = tokens[1]
+            tokens = require(tokens[1:], "identifier", "Expected a loop variable after 'for'")
+            tokens = require(tokens, "in", "Expected 'in' after loop variable")
+            source, tokens = parse_expression(tokens)
+            tokens = require(tokens, "]", "Expected ']' to close list comprehension")
+            return {"tag": "list", "items": items, "variable": variable["value"],
+                    "source": source}, tokens
         while tokens[0]["tag"] == ",":
             item, tokens = parse_expression(tokens[1:])
             items.append(item)
