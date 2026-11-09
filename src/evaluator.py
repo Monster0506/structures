@@ -946,14 +946,19 @@ def evaluate(ast, environment):
         return None, "continue"
 
     if ast["tag"] == "while":
+        until = ast.get("until", False)
+        check_condition = not until
         while True:
-            condition, status = evaluate(ast["condition"], environment)
-            if status is not None:
-                return condition, status
-            if type(condition) is not bool:
-                raise TypeError("while condition must be a boolean expression")
-            if not condition:
-                return None, None
+            if check_condition:
+                condition, status = evaluate(ast["condition"], environment)
+                if status is not None:
+                    return condition, status
+                if type(condition) is not bool:
+                    keyword = "until" if until else "while"
+                    raise TypeError(f"{keyword} condition must be a boolean expression")
+                if condition == until:
+                    return None, None
+            check_condition = True
             value, status = evaluate(ast["body"], environment)
             if status == "break":
                 return None, None
