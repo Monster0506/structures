@@ -123,9 +123,9 @@ from tokenizer import tokenize
 #   list the copy is deep: nested lists are new lists too, all the way down.
 #
 #   ===== CHAPTER 11: functions =====
-#   function_expression ::= "function" "(" [ <identifier> { "," <identifier> } ] ")" block
+#   function_expression ::= "function" "(" [ parameter { "," parameter } ] ")" block
 #   function_definition ::= "function" <identifier>
-#                            "(" [ <identifier> { "," <identifier> } ] ")" block
+#                            "(" [ parameter { "," parameter } ] ")" block
 #   return_statement ::= "return" [ expression ]
 #   A function expression is a factor: a value, like any other, with no
 #   name of its own. function_definition is pure syntactic sugar for an
@@ -539,27 +539,35 @@ def parse_function_tail(tokens):
     # ===== CHAPTER 11 =====
     # Shared by the expression and statement forms below, starting right
     # after the "function" keyword has already been consumed:
-    #   "(" [ <identifier> { "," <identifier> } ] ")" block
+    #   "(" [ parameter { "," parameter } ] ")" block
     parameters = []
+    defaults = []
     tokens = require(tokens, "(", "Expected '(' after 'function'")
     if tokens[0]["tag"] != ")":
-        if tokens[0]["tag"] != "identifier":
-            raise SyntaxError(f"Expected a parameter name, got {tokens[0]}")
-        parameters.append(tokens[0]["value"])
-        tokens = tokens[1:]
-        while tokens[0]["tag"] == ",":
-            if tokens[1]["tag"] != "identifier":
-                raise SyntaxError(f"Expected a parameter name, got {tokens[1]}")
-            parameters.append(tokens[1]["value"])
-            tokens = tokens[2:]
+        while True:
+            if tokens[0]["tag"] != "identifier":
+                raise SyntaxError(f"Expected a parameter name, got {tokens[0]}")
+            parameters.append(tokens[0]["value"])
+            tokens = tokens[1:]
+            if tokens[0]["tag"] == "=":
+                default, tokens = parse_expression(tokens[1:])
+                defaults.append(default)
+            elif defaults:
+                raise SyntaxError(f"Expected a default value for parameter {parameters[-1]} after a defaulted parameter")
+            if tokens[0]["tag"] != ",":
+                break
+            tokens = tokens[1:]
     tokens = require(tokens, ")", "Expected ')' after parameter list")
     body, tokens = parse_block(tokens)
-    return {"tag": "function", "parameters": parameters, "body": body}, tokens
+    node = {"tag": "function", "parameters": parameters, "body": body}
+    if defaults:
+        node["defaults"] = defaults
+    return node, tokens
 
 
 def parse_function_expression(tokens):
     # ===== CHAPTER 11 =====
-    # function_expression ::= "function" "(" [ <identifier> { "," <identifier> } ] ")" block
+    # function_expression ::= "function" "(" [ parameter { "," parameter } ] ")" block
     # This is where the actual work happens: a function expression is a
     # factor, a value like any other, with no name of its own. It can be
     # assigned, passed as an argument, returned, or called immediately --
@@ -572,7 +580,7 @@ def parse_function_expression(tokens):
 def parse_function_definition(tokens):
     # ===== CHAPTER 11 =====
     # function_definition ::= "function" <identifier>
-    #                          "(" [ <identifier> { "," <identifier> } ] ")" block
+    #                          "(" [ parameter { "," parameter } ] ")" block
     # Purely syntactic sugar: a named definition is exactly an assignment
     # of a function expression to that name, resolved here so nothing
     # downstream of parsing -- the evaluator least of all -- ever needs to
