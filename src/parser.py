@@ -59,10 +59,10 @@ from tokenizer import tokenize
 #   comparison ::= arithmetic_expression [ compare_op arithmetic_expression ]
 #   compare_op ::= "==" | "!=" | "<" | "<=" | ">" | ">="
 #   arithmetic_expression ::= term { ("+" | "-") term }
-#   term ::= unary { ("*" | "/") unary }
+#   term ::= unary { ("*" | "/" | "%") unary }
 #
 #   ===== CHAPTER 9: postfix indexing applies to any factor =====
-#   unary ::= "-" unary | complex_expression
+#   unary ::= "-" unary | power
 #   complex_expression ::= factor { index_suffix | call_suffix }
 #   index_suffix ::= "[" expression "]" | "." <identifier>
 #   An index_suffix chain produces "complex" nodes, not "index" nodes, on
@@ -336,17 +336,21 @@ def parse_complex_expression(tokens):
 
 
 def parse_unary(tokens):
-    """unary ::= "-" unary | complex_expression"""
+    """unary ::= "-" unary | power"""
     if tokens[0]["tag"] == "-":
         operand, tokens = parse_unary(tokens[1:])
         return {"tag": "unary-", "operand": operand}, tokens
-    return parse_complex_expression(tokens)
+    left, tokens = parse_complex_expression(tokens)
+    if tokens[0]["tag"] == "**":
+        right, tokens = parse_unary(tokens[1:])
+        left = {"tag": "**", "left": left, "right": right}
+    return left, tokens
 
 
 def parse_term(tokens):
-    """term ::= unary { ("*" | "/") unary }"""
+    """term ::= unary { ("*" | "/" | "%") unary }"""
     left, tokens = parse_unary(tokens)
-    while tokens[0]["tag"] in ["*", "/"]:
+    while tokens[0]["tag"] in ["*", "/", "%"]:
         operator = tokens[0]["tag"]
         right, tokens = parse_unary(tokens[1:])
         left = {"tag": operator, "left": left, "right": right}

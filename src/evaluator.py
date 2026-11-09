@@ -863,7 +863,7 @@ def evaluate(ast, environment):
     # Python's operators deliberately provide the Chapter 3 behavior:
     # string + string concatenates, string * integer repeats, and integer *
     # string repeats in the opposite order. Numeric behavior is unchanged.
-    if ast["tag"] in ("+", "-", "*", "/"):
+    if ast["tag"] in ("+", "-", "*", "/", "%", "**"):
         left, status = evaluate(ast["left"], environment)
         if status is not None:
             return left, status
@@ -884,12 +884,29 @@ def evaluate(ast, environment):
             if ast["tag"] != "+" or type(left) is not list or type(right) is not list:
                 raise TypeError("Lists only support + with another list")
             return left + right, None
+        if ast["tag"] in ("%", "**") and not (type(left) in (int, float) and type(right) in (int, float)):
+            raise TypeError(f"Operator {ast['tag']} requires two numbers")
+        if ast["tag"] == "%":
+            if right == 0:
+                raise ZeroDivisionError("Remainder by zero")
+            return left % right, None
+        if ast["tag"] == "**":
+            if left == 0 and right < 0:
+                raise ZeroDivisionError("Cannot raise zero to a negative power")
+            if left < 0 and type(right) is float and not right.is_integer():
+                raise ValueError("Negative base requires an integer exponent")
+            try:
+                return left ** right, None
+            except OverflowError:
+                raise OverflowError("Exponent result is too large") from None
         if ast["tag"] == "+":
             return left + right, None
         if ast["tag"] == "-":
             return left - right, None
         if ast["tag"] == "*":
             return left * right, None
+        if type(left) in (int, float) and right == 0:
+            raise ZeroDivisionError("Division by zero")
         return left / right, None
 
     if ast["tag"] == "print":
