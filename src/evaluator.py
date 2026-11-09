@@ -829,7 +829,7 @@ def evaluate(ast, environment):
             raise TypeError("Unary minus requires a number")
         return -value, None
 
-    if ast["tag"] in ("==", "!=", "<", "<=", ">", ">="):
+    if ast["tag"] in ("==", "!=", "<", "<=", ">", ">=", "in"):
         # Comparisons evaluate both operands, left to right. Unlike logical
         # operators they have no short-circuit case.
         left, status = evaluate(ast["left"], environment)
@@ -838,6 +838,14 @@ def evaluate(ast, environment):
         right, status = evaluate(ast["right"], environment)
         if status is not None:
             return right, status
+        if ast["tag"] == "in":
+            if type(right) is list:
+                return any(vertex_equal(left, item) for item in right), None
+            if is_function(right) or not (is_object(right) or type(right) is str):
+                raise TypeError("in requires a list, object, or string on the right")
+            if type(left) is not str:
+                raise TypeError("in requires a string on the left of an object or string")
+            return left in right, None
         numeric = type(left) in (int, float) and type(right) in (int, float)
         if ast["tag"] in ("==", "!="):
             # Integers and floats share numeric equality. Other types must
