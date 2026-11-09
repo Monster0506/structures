@@ -540,15 +540,22 @@ def parse_while_statement(tokens):
 def parse_for_statement(tokens):
     tokens = require(tokens, "for", "Expected 'for'")
     tokens = require(tokens, "(", "Expected '(' after 'for'")
-    initializer, tokens = parse_expression(tokens)
+    statements = []
+    if tokens[0]["tag"] != ";":
+        initializer, tokens = parse_expression(tokens)
+        statements.append(initializer)
     tokens = require(tokens, ";", "Expected ';' after for initializer")
-    condition, tokens = parse_expression(tokens)
+    condition = {"tag": "boolean", "value": True}
+    if tokens[0]["tag"] != ";":
+        condition, tokens = parse_expression(tokens)
     tokens = require(tokens, ";", "Expected ';' after for condition")
-    update, tokens = parse_expression(tokens)
+    loop = {"tag": "while", "condition": condition}
+    if tokens[0]["tag"] != ")":
+        loop["update"], tokens = parse_expression(tokens)
     tokens = require(tokens, ")", "Expected ')' after for update")
-    body, tokens = parse_block(tokens)
-    loop = {"tag": "while", "condition": condition, "body": body, "update": update}
-    return {"tag": "statement_list", "statements": [initializer, loop]}, tokens
+    loop["body"], tokens = parse_block(tokens)
+    statements.append(loop)
+    return {"tag": "statement_list", "statements": statements}, tokens
 
 
 def parse_function_tail(tokens):
