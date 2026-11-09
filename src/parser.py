@@ -109,7 +109,8 @@ from tokenizer import tokenize
 #   type_expression ::= "type" "(" expression ")"
 #
 #   ===== CHAPTER 9: list literals, length, slice, head, and tail =====
-#   list_expression ::= "[" [ expression { "," expression } ] "]"
+#   list_expression ::= "[" [ expression ( "for" <identifier> "in" expression
+#                                        | { "," expression } ) ] "]"
 #   length_expression ::= "length" "(" expression ")"
 #   slice_expression ::= "slice" "(" expression "," expression "," expression ")"
 #   head_expression ::= "head" "(" expression ")"
@@ -239,7 +240,8 @@ def parse_object_expression(tokens):
 
 def parse_list_expression(tokens):
     # ===== CHAPTER 9 =====
-    # list_expression ::= "[" [ expression { "," expression } ] "]"
+    # list_expression ::= "[" [ expression ( "for" <identifier> "in" expression
+    #                                      | { "," expression } ) ] "]"
     tokens = require(tokens, "[", "Expected '['")
     items = []
     if tokens[0]["tag"] != "]":
