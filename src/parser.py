@@ -80,7 +80,8 @@ from tokenizer import tokenize
 #   freely in one chain: a[1].bob[3][4].a.b["dog"].
 #
 #   ===== CHAPTER 11: call_suffix is the promised extension =====
-#   call_suffix ::= "(" [ expression { "," expression } ] ")"
+#   call_suffix ::= "(" [ argument { "," argument } ] ")"
+#   argument ::= [ "..." ] expression
 #   A call produces a "call" node, not another "complex" one: it takes an
 #   argument list, not a single index, so it is a sibling in the same
 #   suffix chain rather than a third meaning crammed into "complex". All
@@ -309,24 +310,31 @@ def parse_complex_suffixes(node, tokens):
             tokens = tokens[1:]
             node = {"tag": "complex", "base": node, "index": index}
         else:
-            arguments, tokens = parse_call_arguments(tokens)
+            arguments, spread, tokens = parse_call_arguments(tokens)
             node = {"tag": "call", "callee": node, "arguments": arguments}
+            if spread:
+                node["spread"] = spread
     return node, tokens
 
 
 def parse_call_arguments(tokens):
     # ===== CHAPTER 11 =====
-    # call_suffix ::= "(" [ expression { "," expression } ] ")"
+    # call_suffix ::= "(" [ argument { "," argument } ] ")"
     tokens = require(tokens, "(", "Expected '('")
     arguments = []
+    spread = []
     if tokens[0]["tag"] != ")":
-        argument, tokens = parse_expression(tokens)
-        arguments.append(argument)
-        while tokens[0]["tag"] == ",":
-            argument, tokens = parse_expression(tokens[1:])
+        while True:
+            if tokens[0]["tag"] == "...":
+                spread.append(len(arguments))
+                tokens = tokens[1:]
+            argument, tokens = parse_expression(tokens)
             arguments.append(argument)
+            if tokens[0]["tag"] != ",":
+                break
+            tokens = tokens[1:]
     tokens = require(tokens, ")", "Expected ')' to close argument list")
-    return arguments, tokens
+    return arguments, spread, tokens
 
 
 def parse_complex_expression(tokens):
