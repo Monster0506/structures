@@ -616,6 +616,16 @@ def evaluate(ast, environment):
         # copy(), below, is the deep alternative.
         return value[1:], None
 
+    if ast["tag"] in ("keys", "values"):
+        value, status = evaluate(ast["expression"], environment)
+        if status is not None:
+            return value, status
+        if not is_object(value) or is_function(value):
+            raise TypeError(f"{ast['tag']} argument must be an object")
+        if ast["tag"] == "keys":
+            return list(value), None
+        return list(value.values()), None
+
     if ast["tag"] == "copy":
         value, status = evaluate(ast["expression"], environment)
         if status is not None:
