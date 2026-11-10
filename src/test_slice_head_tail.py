@@ -195,8 +195,8 @@ class SliceHeadTailTests(unittest.TestCase):
             t=[1, 2, 3, 4];
             r=[];
             while (length(t) > 0) {
-                r=[head(t)] + r;
-                t=tail(t);
+                set r=[head(t)] + r;
+                set t=tail(t);
             };
         '''
         _, env = self.run_source(source)
@@ -208,8 +208,8 @@ class SliceHeadTailTests(unittest.TestCase):
             s="abc";
             r="";
             while (length(s) > 0) {
-                r=head(s) + r;
-                s=tail(s);
+                set r=head(s) + r;
+                set s=tail(s);
             };
         '''
         _, env = self.run_source(source)
