@@ -218,18 +218,22 @@ def parse_factor(tokens):
 
 
 def parse_object_expression(tokens):
-    # object_expression ::= "{" [ expression ":" expression
-    #                          { "," expression ":" expression } ] "}"
+    # object_expression ::= "{" [ entry { "," entry } ] "}"
+    #                       entry ::= expression ":" expression | "..." expression
     # Keep ordered pairs in the AST: duplicate evaluated keys are runtime errors.
     tokens = require(tokens, "{", "Expected '{'")
     fields = []
     if tokens and tokens[0]["tag"] == "}":
         return {"tag": "object", "fields": fields}, tokens[1:]
     while True:
-        key, tokens = parse_expression(tokens)
-        tokens = require(tokens, ":", "Expected ':' after object key")
-        value, tokens = parse_expression(tokens)
-        fields.append((key, value))
+        if tokens[0]["tag"] == "...":
+            value, tokens = parse_expression(tokens[1:])
+            fields.append((None, value))
+        else:
+            key, tokens = parse_expression(tokens)
+            tokens = require(tokens, ":", "Expected ':' after object key")
+            value, tokens = parse_expression(tokens)
+            fields.append((key, value))
         if not tokens or tokens[0]["tag"] != ",":
             break
         tokens = tokens[1:]
