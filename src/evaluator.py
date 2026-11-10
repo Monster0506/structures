@@ -422,6 +422,12 @@ def evaluate(ast, environment):
         # validated right boolean is also the result of the whole expression.
         return right, None
 
+    if ast["tag"] == "??":
+        left, status = evaluate(ast["left"], environment)
+        if status is not None or left is not None:
+            return left, status
+        return evaluate(ast["right"], environment)
+
     if ast["tag"] == "number":
         return ast["value"], None
 
