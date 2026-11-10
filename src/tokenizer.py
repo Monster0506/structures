@@ -15,6 +15,7 @@ patterns = [
     (r"==", "=="),
     # Inequality must win over the single-character spelling of "not".
     (r"!=", "!="),
+    (r"\?\?", "??"),
     # Normalize both spellings here, so the parser only needs word-form tags.
     # Word boundaries keep names such as "android" and "notable" intact.
     (r"and\b|&&", "and"),
