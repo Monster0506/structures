@@ -498,6 +498,12 @@ def evaluate(ast, environment):
             items.append(value)
         return items, None
 
+    if ast["tag"] == "optional":
+        value, status = evaluate(ast["expression"], environment)
+        if status == "optional":
+            return None, None
+        return value, status
+
     if ast["tag"] == "complex":
         # Reading: base and index are both evaluated and checked for status
         # before the access happens. Assignment to the same node form is
@@ -506,6 +512,8 @@ def evaluate(ast, environment):
         base, status = evaluate(ast["base"], environment)
         if status is not None:
             return base, status
+        if ast.get("optional") and base is None:
+            return None, "optional"
         index, status = evaluate(ast["index"], environment)
         if status is not None:
             return index, status
