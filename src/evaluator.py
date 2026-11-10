@@ -234,7 +234,7 @@ def vertex_equal(left, right, comparing=None):
     # disagree on that one field, so the generic structural comparison
     # below already returns False for them on its own, without ever
     # needing to look past that first field into parameters or body.
-    if ((type(left) is list and type(right) is list) or (is_object(left) and is_object(right))):
+    if ((type(left) in (list, tuple) and type(right) is type(left)) or (is_object(left) and is_object(right))):
         if comparing is None:
             comparing = set()
         pair = (id(left), id(right))
@@ -282,6 +282,8 @@ def vertex_repr(value, ancestors=None):
         return "null"
     if is_function(value):
         return "<function>"
+    if type(value) is tuple:
+        return "immutable([" + ", ".join(vertex_repr(item) for item in value) + "])"
     if (type(value) is list or is_object(value)):
         if ancestors is None:
             ancestors = set()
@@ -527,7 +529,7 @@ def evaluate(ast, environment):
                 raise TypeError("Object key must be a string")
             # Field access is direct; it never walks an environment.
             return base[index], None
-        if type(base) not in (list, str):
+        if type(base) not in (list, str, tuple):
             raise TypeError("Indexing requires a list or string")
         return base[require_index(index, base)], None
 
@@ -590,7 +592,7 @@ def evaluate(ast, environment):
         if status is not None:
             return value, status
         # Lists count elements; strings count characters.
-        if type(value) not in (list, str):
+        if type(value) not in (list, str, tuple):
             raise TypeError("length argument must be a list or string")
         return len(value), None
 
@@ -615,6 +617,17 @@ def evaluate(ast, environment):
         # the original: a shallow copy, like slice and concatenation.
         # copy(), below, is the deep alternative.
         return value[1:], None
+
+    if ast["tag"] == "immutable":
+        value, status = evaluate(ast["expression"], environment)
+        if status is not None:
+            return value, status
+        if type(value) not in (list, tuple):
+            raise TypeError("immutable argument must be a list")
+        for item in value:
+            if item is not None and type(item) not in (bool, int, float, str):
+                raise TypeError("immutable list can only hold numbers, strings, booleans, and null")
+        return tuple(value), None
 
     if ast["tag"] == "copy":
         value, status = evaluate(ast["expression"], environment)
@@ -675,6 +688,8 @@ def evaluate(ast, environment):
             return "number", None
         if type(value) is str:
             return "string", None
+        if type(value) is tuple:
+            return "immutable list", None
         if type(value) is list:
             # ===== CHAPTER 9 =====
             return "list", None
@@ -704,7 +719,7 @@ def evaluate(ast, environment):
             return "null", None
         if is_function(value):
             return vertex_repr(value), None
-        if (type(value) is list or is_object(value)):
+        if (type(value) in (list, tuple) or is_object(value)):
             return vertex_repr(value), None
         raise TypeError("string argument must be a Vertex value")
 
@@ -805,6 +820,8 @@ def evaluate(ast, environment):
                 key = index
             elif type(base) is list:
                 key = require_index(index, base)
+            elif type(base) is tuple:
+                raise TypeError("Cannot modify an immutable list")
             else:
                 raise TypeError("Indexed assignment requires a list or object")
             destination = base
@@ -880,7 +897,7 @@ def evaluate(ast, environment):
         # Python's own + already builds a fresh list rather than sharing
         # either operand's identity, which is exactly the copy behavior
         # concatenation needs. No other operator accepts a list operand.
-        if type(left) is list or type(right) is list:
+        if type(left) in (list, tuple) or type(right) in (list, tuple):
             if ast["tag"] != "+" or type(left) is not list or type(right) is not list:
                 raise TypeError("Lists only support + with another list")
             return left + right, None
@@ -906,7 +923,7 @@ def evaluate(ast, environment):
         elif result is None or is_function(result):
             # ===== CHAPTER 11 =====
             text = vertex_repr(result)
-        elif (type(result) is list or is_object(result)):
+        elif (type(result) in (list, tuple) or is_object(result)):
             # ===== CHAPTER 9 =====
             text = vertex_repr(result)
         else:
