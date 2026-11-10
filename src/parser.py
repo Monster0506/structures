@@ -10,8 +10,9 @@ from tokenizer import tokenize
 #   statement ::= print_statement | exit_expression
 #               | assert_statement | if_statement | while_statement
 #               | break_statement | continue_statement
-#               | function_definition | return_statement | expression
+#               | function_definition | const_statement | return_statement | expression
 #   assert_statement ::= "assert" expression "," <string>
+#   const_statement ::= "const" <identifier> "=" expression
 #
 #   ===== CHAPTER 11: assignment moves into the expression grammar =====
 #   expression_statement ::= expression
@@ -440,9 +441,21 @@ def parse_set_statement(tokens):
     return {"tag": "set", "name": name, "expression": expression}, tokens
 
 
+def parse_const_statement(tokens):
+    tokens = require(tokens, "const", "Expected 'const'")
+    if tokens[0]["tag"] != "identifier":
+        raise SyntaxError("Expected a constant name after 'const'")
+    name = tokens[0]["value"]
+    tokens = require(tokens[1:], "=", "Expected '=' after constant name")
+    expression, tokens = parse_expression(tokens)
+    return {"tag": "const", "name": name, "expression": expression}, tokens
+
+
 def parse_statement(tokens):
     if tokens[0]["tag"] == "set":
         return parse_set_statement(tokens)
+    if tokens[0]["tag"] == "const":
+        return parse_const_statement(tokens)
     if tokens[0]["tag"] == "assert":
         return parse_assert_statement(tokens)
     if tokens[0]["tag"] == "exit":

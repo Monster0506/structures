@@ -18,6 +18,7 @@ from native_functions import NATIVE_FUNCTIONS
 # that root into a link to another environment. Host metadata stays in
 # attributes rather than in the dictionary's public binding entries.
 PARENT_KEY = "$PARENT"
+CONST_KEY = "$CONST"
 
 
 # ===== CHAPTER 13 =====
@@ -27,10 +28,17 @@ class ModuleEnvironment(dict):
         super().__init__()
         self.source_path = source_path
         self.io = {"__input": "", "__output": ""}
+        self.constants = set()
 
 
 def is_object(value):
     return type(value) in (dict, ModuleEnvironment)
+
+
+def constant_names(environment):
+    if isinstance(environment, ModuleEnvironment):
+        return environment.constants
+    return environment.get(CONST_KEY, ())
 
 
 SOURCE_PATH = ContextVar("vertex_source_path", default=None)
@@ -745,6 +753,20 @@ def evaluate(ast, environment):
             raise ValueError(f"Invalid boolean: {value!r}")
         raise TypeError("boolean argument must be a number, string, or boolean")
 
+    if ast["tag"] == "const":
+        name = ast["name"]
+        if name in environment or name in ("__input", "__output"):
+            raise NameError(f"Cannot declare constant already defined: {name}")
+        value, status = evaluate(ast["expression"], environment)
+        if status is not None:
+            return value, status
+        environment[name] = value
+        if isinstance(environment, ModuleEnvironment):
+            environment.constants.add(name)
+        else:
+            environment.setdefault(CONST_KEY, set()).add(name)
+        return value, None
+
     # ===== CHAPTER 12 =====
     if ast["tag"] == "set":
         # Resolve the nearest existing binding before evaluating the RHS.
@@ -757,6 +779,8 @@ def evaluate(ast, environment):
             if PARENT_KEY not in destination or isinstance(destination, ModuleEnvironment):
                 raise NameError(f"Cannot set undefined variable: {name}")
             destination = destination[PARENT_KEY]
+        if name in constant_names(destination):
+            raise NameError(f"Cannot set constant: {name}")
         value, status = evaluate(ast["expression"], environment)
         if status is not None:
             return value, status
@@ -785,6 +809,8 @@ def evaluate(ast, environment):
             if name in ("__input", "__output"):
                 destination = io_environment(environment)
             key = name
+            if key in constant_names(destination):
+                raise NameError(f"Cannot assign to constant: {key}")
         elif target["tag"] == "complex":
             base, status = evaluate(target["base"], environment)
             if status is not None:
@@ -808,6 +834,8 @@ def evaluate(ast, environment):
             else:
                 raise TypeError("Indexed assignment requires a list or object")
             destination = base
+            if isinstance(base, ModuleEnvironment) and key in base.constants:
+                raise NameError(f"Cannot assign to constant: {key}")
         else:
             raise ValueError(f"Cannot assign to a {target['tag']} expression")
         value, status = evaluate(ast["expression"], environment)
