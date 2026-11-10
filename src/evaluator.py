@@ -821,6 +821,25 @@ def evaluate(ast, environment):
         # assignment evaluates to 1, and x is assigned that same 1.
         return value, None
 
+    if ast["tag"] == "delete":
+        target = ast["target"]
+        if target["tag"] != "complex":
+            raise ValueError(f"Cannot delete a {target['tag']} expression")
+        base, status = evaluate(target["base"], environment)
+        if status is not None:
+            return base, status
+        key, status = evaluate(target["index"], environment)
+        if status is not None:
+            return key, status
+        if not is_object(base) or is_function(base) or isinstance(base, ModuleEnvironment):
+            raise TypeError("Delete requires an object")
+        if type(key) is not str:
+            raise TypeError("Object key must be a string")
+        if key not in base:
+            raise KeyError(f"Cannot delete undefined field: {key}")
+        del base[key]
+        return None, None
+
     if ast["tag"] == "unary-":
         value, status = evaluate(ast["operand"], environment)
         if status is not None:
