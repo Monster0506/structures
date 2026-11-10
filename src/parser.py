@@ -107,6 +107,7 @@ from tokenizer import tokenize
 #   string_expression ::= "string" "(" expression ")"
 #   boolean_expression ::= "boolean" "(" expression ")"
 #   type_expression ::= "type" "(" expression ")"
+#   interpolation ::= "${" <identifier> "}"
 #
 #   ===== CHAPTER 9: list literals, length, slice, head, and tail =====
 #   list_expression ::= "[" [ expression { "," expression } ] "]"
@@ -170,7 +171,39 @@ def parse_factor(tokens):
 
     # ===== CHAPTER 3: string expression =====
     if token["tag"] == "string":
-        return {"tag": "string", "value": token["value"]}, tokens[1:]
+        text = token["value"]
+        parts = []
+        literal = ""
+        position = 0
+        while position < len(text):
+            if text.startswith("$${", position):
+                literal += "${"
+                position += 3
+            elif text.startswith("${", position):
+                close = text.find("}", position)
+                name = text[position + 2:close] if close != -1 else ""
+                if not (name.isidentifier() and name.isascii()):
+                    raise SyntaxError(
+                        f"Malformed interpolation in string at line {token['line']}, "
+                        f"column {token['column']}"
+                    )
+                if literal:
+                    parts.append({"tag": "string", "value": literal})
+                    literal = ""
+                parts.append({"tag": "string_conversion",
+                              "expression": {"tag": "identifier", "value": name}})
+                position = close + 1
+            else:
+                literal += text[position]
+                position += 1
+        if not parts:
+            return {"tag": "string", "value": literal}, tokens[1:]
+        if literal:
+            parts.append({"tag": "string", "value": literal})
+        node = parts[0]
+        for part in parts[1:]:
+            node = {"tag": "+", "left": node, "right": part}
+        return node, tokens[1:]
 
     if token["tag"] == "identifier":
         return {"tag": "identifier", "value": token["value"]}, tokens[1:]
