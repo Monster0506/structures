@@ -81,6 +81,7 @@ patterns = [
     # chapter has no general function syntax.
     (r"length\b", "length"),
     (r"slice\b", "slice"),
+    (r"range\b", "range"),
     (r"head\b", "head"),
     (r"tail\b", "tail"),
 
