@@ -933,9 +933,9 @@ def evaluate(ast, environment):
         # exit, or fail an assertion. Both branches share this environment;
         # a block introduces no scope of its own.
         if condition:
-            return evaluate(ast["then"], environment)
+            return evaluate(ast["then"], {PARENT_KEY: environment})
         if ast["else"] is not None:
-            return evaluate(ast["else"], environment)
+            return evaluate(ast["else"], {PARENT_KEY: environment})
         return None, None
 
     # ===== CHAPTER 8: loops =====
@@ -954,7 +954,7 @@ def evaluate(ast, environment):
                 raise TypeError("while condition must be a boolean expression")
             if not condition:
                 return None, None
-            value, status = evaluate(ast["body"], environment)
+            value, status = evaluate(ast["body"], {PARENT_KEY: environment})
             if status == "break":
                 return None, None
             if status is not None and status != "continue":
