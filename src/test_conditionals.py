@@ -17,7 +17,7 @@ class ConditionalTests(unittest.TestCase):
         return result, environment
 
     def test_single_branch(self):
-        result, env = self.run_source('if (true) { x=1 }')
+        result, env = self.run_source('x=0; if (true) { set x=1 }')
         self.assertEqual(result, (None, None))
         self.assertEqual(env['x'], 1)
 
@@ -28,7 +28,7 @@ class ConditionalTests(unittest.TestCase):
     def test_two_branch(self):
         for condition, expected in [('true', 1), ('false', 2)]:
             with self.subTest(condition=condition):
-                _, env = self.run_source(f'if ({condition}) {{ x=1 }} else {{ x=2 }}')
+                _, env = self.run_source(f'x=0; if ({condition}) {{ set x=1 }} else {{ set x=2 }}')
                 self.assertEqual(env['x'], expected)
 
     def test_condition_requires_boolean(self):
@@ -41,7 +41,7 @@ class ConditionalTests(unittest.TestCase):
         self.assertEqual(result, (None, None))
         self.assertEqual(env['x'], 2)
 
-        result, env = self.run_source('if (false) { } else { x=1 }')
+        result, env = self.run_source('x=0; if (false) { } else { set x=1 }')
         self.assertEqual(env['x'], 1)
 
         result, env = self.run_source('if (true) { } else { x=1 }')
@@ -55,7 +55,7 @@ class ConditionalTests(unittest.TestCase):
                     f'if (false) {{ x=99 }} else {{ {body} }}; x=2')
                 self.assertEqual(result, (None, None))
                 self.assertEqual(env['x'], 2)
-        result, env = self.run_source('if (true) { ;;; x=1;;; y=2;;; }')
+        result, env = self.run_source('x=0; y=0; if (true) { ;;; set x=1;;; set y=2;;; }')
         self.assertEqual(result, (None, None))
         self.assertEqual((env['x'], env['y']), (1, 2))
 
@@ -77,20 +77,21 @@ class ConditionalTests(unittest.TestCase):
 
     def test_condition_evaluated_exactly_once(self):
         with patch('builtins.input', return_value='true') as fake_input:
-            _, env = self.run_source('if (boolean(input())) { x=1 } else { x=2 }')
+            _, env = self.run_source('x=0; if (boolean(input())) { set x=1 } else { set x=2 }')
         fake_input.assert_called_once_with()
         self.assertEqual(env['x'], 1)
 
     def test_multi_statement_block(self):
-        _, env = self.run_source('if (true) { x=1; y=2; z=x+y }')
+        _, env = self.run_source('x=0; y=0; z=0; if (true) { set x=1; set y=2; set z=x+y }')
         self.assertEqual((env['x'], env['y'], env['z']), (1, 2, 3))
 
     def test_nested_conditionals(self):
         source = '''
+            x=0;
             if (true) {
-                if (false) { x=1 } else { x=2 }
+                if (false) { set x=1 } else { set x=2 }
             } else {
-                x=3
+                set x=3
             }
         '''
         _, env = self.run_source(source)
@@ -100,14 +101,14 @@ class ConditionalTests(unittest.TestCase):
         # This grammar has no "else if" shortcut: a chain is an else-block
         # containing its own if_statement, written out with its own braces.
         source = '''
-            grade = 85;
+            grade = 85; letter = "";
             if (grade >= 90) {
-                letter="A"
+                set letter="A"
             } else {
                 if (grade >= 80) {
-                    letter="B"
+                    set letter="B"
                 } else {
-                    letter="C"
+                    set letter="C"
                 }
             }
         '''
@@ -118,16 +119,16 @@ class ConditionalTests(unittest.TestCase):
         # The branch not taken must not read input, exit, or fail an assertion.
         with patch('builtins.input') as read:
             result, env = self.run_source(
-                'if (false) { x=number(input()) } else { x=1 }')
+                'x=0; if (false) { set x=number(input()) } else { set x=1 }')
         read.assert_not_called()
         self.assertEqual(env['x'], 1)
 
-        result, env = self.run_source('if (false) { exit(9) } else { x=1 }')
+        result, env = self.run_source('x=0; if (false) { exit(9) } else { set x=1 }')
         self.assertEqual(result, (None, None))
         self.assertEqual(env['x'], 1)
 
         result, env = self.run_source(
-            'if (true) { x=1 } else { assert false, "should not run" }')
+            'x=0; if (true) { set x=1 } else { assert false, "should not run" }')
         self.assertEqual(result, (None, None))
         self.assertEqual(env['x'], 1)
 

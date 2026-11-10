@@ -107,8 +107,8 @@ class StringIndexingTests(unittest.TestCase):
             r="";
             i=0;
             while (i < length(s)) {
-                r=s[i] + r;
-                i=i + 1;
+                set r=s[i] + r;
+                set i=i + 1;
             };
         '''
         _, env = self.run_source(source)

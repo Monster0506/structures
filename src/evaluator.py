@@ -1105,7 +1105,7 @@ def test_evaluate_chapter_3_program():
 def test_evaluate_if():
     # ===== CHAPTER 7 TEST =====
     print("test evaluate if")
-    result, environment = evaluate_source('if (true) { x=1 }')
+    result, environment = evaluate_source('x=0; if (true) { set x=1 }')
     assert result == (None, None)
     assert environment["x"] == 1
 
@@ -1113,7 +1113,7 @@ def test_evaluate_if():
     assert result == (None, None)
     assert "x" not in environment
 
-    result, environment = evaluate_source('if (false) { x=1 } else { x=2 }')
+    result, environment = evaluate_source('x=0; if (false) { set x=1 } else { set x=2 }')
     assert environment["x"] == 2
 
     result, environment = evaluate_source('x=1; if (true) { }; x=2')
@@ -1124,7 +1124,7 @@ def test_evaluate_if():
 def test_evaluate_while():
     # ===== CHAPTER 8 TEST =====
     print("test evaluate while")
-    result, environment = evaluate_source('i=0; while (i < 3) { i=i+1 }')
+    result, environment = evaluate_source('i=0; while (i < 3) { set i=i+1 }')
     assert result == (None, None)
     assert environment["i"] == 3
 
@@ -1134,13 +1134,13 @@ def test_evaluate_while():
 
     # break stops the loop and completes normally.
     result, environment = evaluate_source(
-        'i=0; while (true) { i=i+1; if (i == 3) { break } }')
+        'i=0; while (true) { set i=i+1; if (i == 3) { break } }')
     assert result == (None, None)
     assert environment["i"] == 3
 
     # continue skips the rest of the body and reevaluates the condition.
     result, environment = evaluate_source(
-        'i=0; total=0; while (i < 5) { i=i+1; if (i == 3) { continue }; total=total+i }')
+        'i=0; total=0; while (i < 5) { set i=i+1; if (i == 3) { continue }; set total=total+i }')
     assert environment["total"] == 12  # 1+2+4+5, 3 skipped
 
     # exit propagates outward instead of being consumed like break.
