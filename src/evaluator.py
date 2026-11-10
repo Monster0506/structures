@@ -108,8 +108,18 @@ FUNCTION_KEY = None
 function_count = 0
 
 
+class BoundMethod:
+    def __init__(self, function, receiver):
+        self.function = function
+        self.receiver = receiver
+
+    def __eq__(self, other):
+        return (type(other) is BoundMethod and self.function is other.function
+                and self.receiver is other.receiver)
+
+
 def is_function(value):
-    return type(value) is dict and FUNCTION_KEY in value
+    return type(value) is BoundMethod or (type(value) is dict and FUNCTION_KEY in value)
 
 
 def make_native_function(name, parameters, implementation):
@@ -526,7 +536,10 @@ def evaluate(ast, environment):
             if type(index) is not str:
                 raise TypeError("Object key must be a string")
             # Field access is direct; it never walks an environment.
-            return base[index], None
+            value = base[index]
+            if type(value) is dict and FUNCTION_KEY in value and "native" not in value:
+                return BoundMethod(value, base), None
+            return value, None
         if type(base) not in (list, str):
             raise TypeError("Indexing requires a list or string")
         return base[require_index(index, base)], None
@@ -542,6 +555,9 @@ def evaluate(ast, environment):
         callee, status = evaluate(ast["callee"], environment)
         if status is not None:
             return callee, status
+        bound = None
+        if type(callee) is BoundMethod:
+            bound, callee = callee, callee.function
         if not is_function(callee):
             raise TypeError("Called value is not a function")
         arguments = []
@@ -567,6 +583,8 @@ def evaluate(ast, environment):
         # ===== Lexical scoping =====
         # Arguments still use the caller; the body uses the defining scope.
         call_environment = {PARENT_KEY: callee["environment"]}
+        if bound is not None:
+            call_environment["self"] = bound.receiver
         for name, value in zip(callee["parameters"], arguments):
             call_environment[name] = value
         value, status = evaluate(callee["body"], call_environment)
