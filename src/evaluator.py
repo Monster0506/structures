@@ -7,6 +7,7 @@ from pathlib import Path
 from contextlib import redirect_stdout
 from unittest.mock import patch
 
+import checker
 import parser
 import tokenizer
 from native_functions import NATIVE_FUNCTIONS
@@ -989,6 +990,7 @@ def evaluate_source(source, environment=None, source_path=None):
     if environment is None:
         environment = {}
     ast = parser.parse(tokenizer.tokenize(source))
+    checker.check(ast)
     token = SOURCE_PATH.set(Path(source_path).resolve()) if source_path else None
     try:
         result = evaluate(ast, environment)
