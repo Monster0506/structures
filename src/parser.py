@@ -64,7 +64,8 @@ from tokenizer import tokenize
 #   ===== CHAPTER 9: postfix indexing applies to any factor =====
 #   unary ::= "-" unary | complex_expression
 #   complex_expression ::= factor { index_suffix | call_suffix }
-#   index_suffix ::= "[" expression "]" | "." <identifier>
+#   index_suffix ::= "[" expression "]" | "[" [ expression ] ":" [ expression ] "]"
+#                  | "." <identifier>
 #   An index_suffix chain produces "complex" nodes, not "index" nodes, on
 #   purpose: a later chapter's function calls are the same postfix form
 #   with a different suffix, and extend this same chain instead of
@@ -298,7 +299,18 @@ def parse_complex_suffixes(node, tokens):
     # chapter 10 already allowed.
     while tokens[0]["tag"] in ("[", ".", "("):
         if tokens[0]["tag"] == "[":
-            index, tokens = parse_expression(tokens[1:])
+            tokens = tokens[1:]
+            index = None
+            if tokens[0]["tag"] != ":":
+                index, tokens = parse_expression(tokens)
+            if tokens[0]["tag"] == ":":
+                end = None
+                tokens = tokens[1:]
+                if tokens[0]["tag"] != "]":
+                    end, tokens = parse_expression(tokens)
+                tokens = require(tokens, "]", "Expected ']' after slice")
+                node = {"tag": "slice", "expression": node, "start": index, "end": end}
+                continue
             tokens = require(tokens, "]", "Expected ']' after index")
             node = {"tag": "complex", "base": node, "index": index}
         elif tokens[0]["tag"] == ".":
