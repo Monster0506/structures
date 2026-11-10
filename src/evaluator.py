@@ -545,11 +545,16 @@ def evaluate(ast, environment):
         if not is_function(callee):
             raise TypeError("Called value is not a function")
         arguments = []
-        for argument_ast in ast["arguments"]:
+        for position, argument_ast in enumerate(ast["arguments"]):
             value, status = evaluate(argument_ast, environment)
             if status is not None:
                 return value, status
-            arguments.append(value)
+            if position in ast.get("spread", ()):
+                if type(value) is not list:
+                    raise TypeError("Spread argument must be a list")
+                arguments.extend(value)
+            else:
+                arguments.append(value)
         if len(arguments) != len(callee["parameters"]):
             raise TypeError(
                 f"Function expects {len(callee['parameters'])} argument(s), "
