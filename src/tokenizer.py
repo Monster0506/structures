@@ -63,6 +63,9 @@ patterns = [
 
     # ===== CHAPTER 12: update an existing lexical binding =====
     (r"set\b", "set"),
+    (r"try\b", "try"),
+    (r"catch\b", "catch"),
+    (r"throw\b", "throw"),
 
     # ===== CHAPTER 11: function keywords =====
     (r"function\b", "function"),
