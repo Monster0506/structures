@@ -810,7 +810,14 @@ def evaluate(ast, environment):
             destination = base
         else:
             raise ValueError(f"Cannot assign to a {target['tag']} expression")
-        value, status = evaluate(ast["expression"], environment)
+        expression = ast["expression"]
+        if "operator" in ast:
+            if target["tag"] == "identifier" and key not in destination:
+                raise NameError(f"Cannot update undefined variable: {key}")
+            expression = {"tag": ast["operator"],
+                          "left": {"tag": "number", "value": destination[key]},
+                          "right": expression}
+        value, status = evaluate(expression, environment)
         if status is not None:
             return value, status
         destination[key] = value

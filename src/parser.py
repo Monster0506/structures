@@ -415,6 +415,10 @@ def parse_expression(tokens):
     if tokens[0]["tag"] == "=":
         right, tokens = parse_expression(tokens[1:])
         return {"tag": "assign", "target": left, "expression": right}, tokens
+    if tokens[0]["tag"] in ("+=", "-=", "*=", "/="):
+        operator = tokens[0]["tag"][0]
+        right, tokens = parse_expression(tokens[1:])
+        return {"tag": "assign", "operator": operator, "target": left, "expression": right}, tokens
     return left, tokens
 
 
