@@ -35,9 +35,9 @@ from tokenizer import tokenize
 #   grammar has no "else if" shortcut.
 #
 #   ===== CHAPTER 8: loops =====
-#   while_statement ::= "while" "(" expression ")" block
-#   break_statement ::= "break"
-#   continue_statement ::= "continue"
+#   while_statement ::= [ <identifier> ":" ] "while" "(" expression ")" block
+#   break_statement ::= "break" [ <identifier> ]
+#   continue_statement ::= "continue" [ <identifier> ]
 #   A loop body is a block, the same requirement as an if branch. break and
 #   continue take no argument and are only meaningful inside a loop; nothing
 #   in the grammar enforces that placement, so using either outside a loop
@@ -453,12 +453,20 @@ def parse_statement(tokens):
     if tokens[0]["tag"] == "if":
         return parse_if_statement(tokens)
     # ===== CHAPTER 8 =====
+    if tokens[0]["tag"] == "identifier" and tokens[1]["tag"] == ":":
+        label = tokens[0]["value"]
+        loop, tokens = parse_while_statement(tokens[2:])
+        loop["label"] = label
+        return loop, tokens
     if tokens[0]["tag"] == "while":
         return parse_while_statement(tokens)
-    if tokens[0]["tag"] == "break":
-        return {"tag": "break"}, tokens[1:]
-    if tokens[0]["tag"] == "continue":
-        return {"tag": "continue"}, tokens[1:]
+    if tokens[0]["tag"] in ("break", "continue"):
+        node = {"tag": tokens[0]["tag"]}
+        tokens = tokens[1:]
+        if tokens[0]["tag"] == "identifier":
+            node["label"] = tokens[0]["value"]
+            tokens = tokens[1:]
+        return node, tokens
     # ===== CHAPTER 11 =====
     # "function" alone is ambiguous: an identifier right after it means the
     # named-definition sugar, statement-only syntax with no expression-level
