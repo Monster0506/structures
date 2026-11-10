@@ -98,6 +98,7 @@ patterns = [
     # with a float literal: by the time the scanner reaches the "." in
     # obj.field, "obj" is already its own identifier token, and "field"
     # starts with a letter, not a digit.
+    (r"\?\.", "?."),
     (r"\.", "."),
 
     (r"[a-zA-Z_][\w]*", "identifier"),
