@@ -94,7 +94,8 @@ from tokenizer import tokenize
 #          | number_expression | string_expression | boolean_expression
 #          | type_expression | list_expression
 #          | length_expression | slice_expression | head_expression
-#          | tail_expression | copy_expression | object_expression
+#          | tail_expression | copy_expression | immutable_expression
+#          | object_expression
 #          | function_expression | "(" expression ")"
 #   exit_expression ::= "exit" "(" [ expression ] ")"
 #   exit_expression is a statement, not a factor: it cannot nest inside a
@@ -121,6 +122,7 @@ from tokenizer import tokenize
 #   copy_expression ::= "copy" "(" expression ")"
 #   Dedicated form for the same reason. x == copy(x) for every x, and for a
 #   list the copy is deep: nested lists are new lists too, all the way down.
+#   immutable_expression ::= "immutable" "(" expression ")"
 #
 #   ===== CHAPTER 11: functions =====
 #   function_expression ::= "function" "(" [ <identifier> { "," <identifier> } ] ")" block
@@ -184,7 +186,7 @@ def parse_factor(tokens):
     operations = {"number_conversion": "number", "string_conversion": "string",
                   "boolean_conversion": "boolean", "type_query": "type",
                   "length": "length", "head": "head", "tail": "tail",
-                  "copy": "copy"}
+                  "copy": "copy", "immutable": "immutable"}
     if token["tag"] in operations:
         name = operations[token["tag"]]
         tokens = require(tokens[1:], "(", f"Expected '(' after '{name}'")
