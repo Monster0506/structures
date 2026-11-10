@@ -628,16 +628,19 @@ def evaluate(ast, environment):
         value, status = evaluate(ast["expression"], environment)
         if status is not None:
             return value, status
-        start, status = evaluate(ast["start"], environment)
-        if status is not None:
-            return start, status
-        end, status = evaluate(ast["end"], environment)
-        if status is not None:
-            return end, status
+        start = end = None
+        if ast["start"] is not None:
+            start, status = evaluate(ast["start"], environment)
+            if status is not None:
+                return start, status
+        if ast["end"] is not None:
+            end, status = evaluate(ast["end"], environment)
+            if status is not None:
+                return end, status
         if type(value) not in (list, str):
             raise TypeError("slice argument must be a list or string")
-        start = require_slice_bound(start, value)
-        end = require_slice_bound(end, value)
+        start = 0 if ast["start"] is None else require_slice_bound(start, value)
+        end = len(value) if ast["end"] is None else require_slice_bound(end, value)
         if start > end:
             raise IndexError("Slice start must not be greater than end")
         return value[start:end], None
