@@ -577,6 +577,8 @@ def evaluate(ast, environment):
         # but a function body can: the loop that was supposed to catch it
         # was never actually there.
         if status in ("break", "continue"):
+            if value is not None:
+                raise ValueError(f"Unknown loop label: {value}")
             raise ValueError(f"'{status}' used outside a loop")
         # Falling off the end (status is None) and an explicit return
         # both already leave value as the right result: None, Vertex's
@@ -940,10 +942,10 @@ def evaluate(ast, environment):
 
     # ===== CHAPTER 8: loops =====
     if ast["tag"] == "break":
-        return None, "break"
+        return ast.get("label"), "break"
 
     if ast["tag"] == "continue":
-        return None, "continue"
+        return ast.get("label"), "continue"
 
     if ast["tag"] == "while":
         while True:
@@ -955,6 +957,8 @@ def evaluate(ast, environment):
             if not condition:
                 return None, None
             value, status = evaluate(ast["body"], environment)
+            if status in ("break", "continue") and value not in (None, ast.get("label")):
+                return value, status
             if status == "break":
                 return None, None
             if status is not None and status != "continue":
@@ -974,6 +978,8 @@ def evaluate(ast, environment):
         # catches break/continue -- there is no outer loop or function here
         # either.
         if status in ("break", "continue"):
+            if value is not None:
+                raise ValueError(f"Unknown loop label: {value}")
             raise ValueError(f"'{status}' used outside a loop")
         if status == "return":
             raise ValueError("'return' used outside a function")
