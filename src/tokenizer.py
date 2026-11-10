@@ -90,6 +90,8 @@ patterns = [
     # nested list is a new list too, all the way down, not just the
     # outermost one the way slice and tail are.
     (r"copy\b", "copy"),
+    (r"keys\b", "keys"),
+    (r"values\b", "values"),
 
     # ===== CHAPTER 10: dot syntax =====
     # obj.field is sugar for obj["field"], parsed to the exact same
