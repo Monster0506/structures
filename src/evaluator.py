@@ -475,14 +475,24 @@ def evaluate(ast, environment):
     # ===== CHAPTER 9: list literals, indexing, and length =====
     if ast["tag"] == "object":
         result = {}
+        explicit = set()
         for key_ast, value_ast in ast["fields"]:
+            if key_ast is None:
+                value, status = evaluate(value_ast, environment)
+                if status is not None:
+                    return value, status
+                if not is_object(value) or is_function(value):
+                    raise TypeError("Object spread requires an object")
+                result.update(value)
+                continue
             key, status = evaluate(key_ast, environment)
             if status is not None:
                 return key, status
             if type(key) is not str:
                 raise TypeError("Object key must be a string")
-            if key in result:
+            if key in explicit:
                 raise ValueError(f"Duplicate object key: {key!r}")
+            explicit.add(key)
             value, status = evaluate(value_ast, environment)
             if status is not None:
                 return value, status
