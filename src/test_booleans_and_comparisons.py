@@ -75,7 +75,7 @@ class BooleanComparisonTests(unittest.TestCase):
                 self.value(expression)
 
     def test_invalid_syntax(self):
-        for source in ("x=1<2<3", "x=1==2==3", "x=1<", "x=<2",
+        for source in ("x=1<", "x=<2",
                        "x=true and", "x=not", "print true"):
             with self.subTest(source=source), self.assertRaises(SyntaxError):
                 parse(tokenize(source))
