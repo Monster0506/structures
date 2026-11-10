@@ -59,7 +59,7 @@ from tokenizer import tokenize
 #   comparison ::= arithmetic_expression [ compare_op arithmetic_expression ]
 #   compare_op ::= "==" | "!=" | "<" | "<=" | ">" | ">="
 #   arithmetic_expression ::= term { ("+" | "-") term }
-#   term ::= unary { ("*" | "/") unary }
+#   term ::= unary { ("*" | "/" | "<<") unary }
 #
 #   ===== CHAPTER 9: postfix indexing applies to any factor =====
 #   unary ::= "-" unary | complex_expression
@@ -344,9 +344,9 @@ def parse_unary(tokens):
 
 
 def parse_term(tokens):
-    """term ::= unary { ("*" | "/") unary }"""
+    """term ::= unary { ("*" | "/" | "<<") unary }"""
     left, tokens = parse_unary(tokens)
-    while tokens[0]["tag"] in ["*", "/"]:
+    while tokens[0]["tag"] in ["*", "/", "<<"]:
         operator = tokens[0]["tag"]
         right, tokens = parse_unary(tokens[1:])
         left = {"tag": operator, "left": left, "right": right}
