@@ -9,7 +9,7 @@ from tokenizer import tokenize
 #   statement_list ::= { ";" } statement { ";" { ";" } statement } { ";" }
 #   statement ::= print_statement | exit_expression
 #               | assert_statement | if_statement | while_statement
-#               | break_statement | continue_statement
+#               | break_statement | continue_statement | try_statement | throw_statement
 #               | function_definition | return_statement | expression
 #   assert_statement ::= "assert" expression "," <string>
 #
@@ -42,6 +42,9 @@ from tokenizer import tokenize
 #   continue take no argument and are only meaningful inside a loop; nothing
 #   in the grammar enforces that placement, so using either outside a loop
 #   is caught later, at evaluation.
+#
+#   try_statement ::= "try" block "catch" <identifier> block
+#   throw_statement ::= "throw" expression
 #
 #   ===== CHAPTER 11: assignment is the lowest-precedence expression form =====
 #   expression ::= logic_or [ "=" expression ]
@@ -443,6 +446,11 @@ def parse_set_statement(tokens):
 def parse_statement(tokens):
     if tokens[0]["tag"] == "set":
         return parse_set_statement(tokens)
+    if tokens[0]["tag"] == "try":
+        return parse_try_statement(tokens)
+    if tokens[0]["tag"] == "throw":
+        expression, tokens = parse_expression(tokens[1:])
+        return {"tag": "throw", "expression": expression}, tokens
     if tokens[0]["tag"] == "assert":
         return parse_assert_statement(tokens)
     if tokens[0]["tag"] == "exit":
@@ -500,6 +508,17 @@ def parse_block(tokens):
     statements, tokens = parse_statement_list(tokens)
     tokens = require(tokens, "}", "Expected '}' to close a block")
     return statements, tokens
+
+
+def parse_try_statement(tokens):
+    tokens = require(tokens, "try", "Expected 'try'")
+    body, tokens = parse_block(tokens)
+    tokens = require(tokens, "catch", "Expected 'catch' after try block")
+    if tokens[0]["tag"] != "identifier":
+        raise SyntaxError(f"Expected a name after 'catch', got {tokens[0]}")
+    name = tokens[0]["value"]
+    handler, tokens = parse_block(tokens[1:])
+    return {"tag": "try", "body": body, "name": name, "handler": handler}, tokens
 
 
 def parse_if_statement(tokens):

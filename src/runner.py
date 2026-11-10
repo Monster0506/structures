@@ -1,6 +1,6 @@
 import sys
 
-from evaluator import evaluate_source
+from evaluator import evaluate_source, vertex_repr
 
 
 if __name__ == "__main__":
@@ -19,5 +19,8 @@ if __name__ == "__main__":
     if status == "exit":
         # Keep process termination outside the recursive evaluator.
         sys.exit(value)
+    if status == "throw":
+        print(f"Uncaught error: {vertex_repr(value)}", file=sys.stderr)
+        sys.exit(1)
     if status is not None:
         raise ValueError(f"Unhandled evaluation status: {status}")

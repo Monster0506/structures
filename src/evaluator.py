@@ -963,6 +963,19 @@ def evaluate(ast, environment):
                 return value, status
             # Normal completion and "continue" both return to the condition.
 
+    if ast["tag"] == "throw":
+        value, status = evaluate(ast["expression"], environment)
+        if status is not None:
+            return value, status
+        return value, "throw"
+
+    if ast["tag"] == "try":
+        value, status = evaluate(ast["body"], environment)
+        if status != "throw":
+            return value, status
+        environment[ast["name"]] = value
+        return evaluate(ast["handler"], environment)
+
     if ast["tag"] == "program":
         globals_ = io_environment(environment)
         globals_.setdefault("__input", "")
