@@ -44,7 +44,7 @@ from tokenizer import tokenize
 #   is caught later, at evaluation.
 #
 #   ===== CHAPTER 11: assignment is the lowest-precedence expression form =====
-#   expression ::= logic_or [ "=" expression ]
+#   expression ::= coalesce [ "=" expression ]
 #   Right-associative: the right-hand side is itself a full expression, so
 #   x = y = 1 parses as x = (y = 1), and x = y is legal wherever an
 #   expression is, including as a bare statement. The parser does not
@@ -53,6 +53,7 @@ from tokenizer import tokenize
 #   decides whether a target can actually be assigned to: only an
 #   identifier or an index/field chain not ending in a call.
 #
+#   coalesce ::= logic_or { "??" logic_or }
 #   logic_or ::= logic_and { "or" logic_and }
 #   logic_and ::= logic_not { "and" logic_not }
 #   logic_not ::= "not" logic_not | comparison
@@ -406,12 +407,15 @@ def parse_logic_or(tokens):
 
 def parse_expression(tokens):
     # ===== CHAPTER 11 =====
-    # expression ::= logic_or [ "=" expression ]
+    # expression ::= coalesce [ "=" expression ]
     # Assignment is the lowest-precedence operator, and right-associative:
     # the right-hand side is parsed by calling parse_expression again, so
     # x = y = 1 parses as x = (y = 1), the same nesting a reader would draw.
     # Operator aliases were normalized by the tokenizer, not by these helpers.
     left, tokens = parse_logic_or(tokens)
+    while tokens[0]["tag"] == "??":
+        right, tokens = parse_logic_or(tokens[1:])
+        left = {"tag": "??", "left": left, "right": right}
     if tokens[0]["tag"] == "=":
         right, tokens = parse_expression(tokens[1:])
         return {"tag": "assign", "target": left, "expression": right}, tokens
