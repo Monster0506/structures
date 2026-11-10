@@ -10,8 +10,9 @@ from tokenizer import tokenize
 #   statement ::= print_statement | exit_expression
 #               | assert_statement | if_statement | while_statement
 #               | break_statement | continue_statement
-#               | function_definition | return_statement | expression
+#               | function_definition | return_statement | delete_statement | expression
 #   assert_statement ::= "assert" expression "," <string>
+#   delete_statement ::= "delete" complex_expression
 #
 #   ===== CHAPTER 11: assignment moves into the expression grammar =====
 #   expression_statement ::= expression
@@ -443,6 +444,9 @@ def parse_set_statement(tokens):
 def parse_statement(tokens):
     if tokens[0]["tag"] == "set":
         return parse_set_statement(tokens)
+    if tokens[0]["tag"] == "delete":
+        target, tokens = parse_complex_expression(tokens[1:])
+        return {"tag": "delete", "target": target}, tokens
     if tokens[0]["tag"] == "assert":
         return parse_assert_statement(tokens)
     if tokens[0]["tag"] == "exit":
