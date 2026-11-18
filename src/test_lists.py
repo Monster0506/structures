@@ -317,8 +317,8 @@ class ListTests(unittest.TestCase):
             total=0;
             i=0;
             while (i < length(a)) {
-                total=total+a[i];
-                i=i+1;
+                set total=total+a[i];
+                set i=i+1;
             };
         '''
         _, env = self.run_source(source)

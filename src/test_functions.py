@@ -171,7 +171,7 @@ class FunctionTests(unittest.TestCase):
     def test_call_inside_a_condition(self):
         result, env = self.run_source('''
             function isPositive(x) { return x > 0 };
-            if (isPositive(5)) { y=1 } else { y=2 }
+            y=0; if (isPositive(5)) { set y=1 } else { set y=2 }
         ''')
         self.assertEqual(env['y'], 1)
 
@@ -317,7 +317,7 @@ class FunctionTests(unittest.TestCase):
                 i = 0;
                 while (true) {
                     if (items[i] > limit) { break };
-                    i = i+1
+                    set i = i+1
                 };
                 return items[i]
             };
