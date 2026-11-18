@@ -57,7 +57,7 @@ from tokenizer import tokenize
 #   logic_and ::= logic_not { "and" logic_not }
 #   logic_not ::= "not" logic_not | comparison
 #   comparison ::= arithmetic_expression [ compare_op arithmetic_expression ]
-#   compare_op ::= "==" | "!=" | "<" | "<=" | ">" | ">="
+#   compare_op ::= "==" | "!=" | "<" | "<=" | ">" | ">=" | "in"
 #   arithmetic_expression ::= term { ("+" | "-") term }
 #   term ::= unary { ("*" | "/") unary }
 #
@@ -364,12 +364,14 @@ def parse_arithmetic_expression(tokens):
 
 
 def parse_comparison(tokens):
-    """comparison ::= arithmetic_expression [ compare_op arithmetic_expression ]"""
+    """comparison ::= arithmetic_expression [ compare_op arithmetic_expression ]
+    compare_op ::= "==" | "!=" | "<" | "<=" | ">" | ">=" | "in"
+    """
     # Arithmetic binds more tightly than comparisons: 1 + 2 < 4 compares 3 to 4.
     left, tokens = parse_arithmetic_expression(tokens)
     # One optional operator, not a loop: unparenthesized comparison chains are
     # deliberately outside this grammar. The unused token will cause an error.
-    if tokens[0]["tag"] in ("==", "!=", "<", "<=", ">", ">="):
+    if tokens[0]["tag"] in ("==", "!=", "<", "<=", ">", ">=", "in"):
         operator = tokens[0]["tag"]
         right, tokens = parse_arithmetic_expression(tokens[1:])
         return {"tag": operator, "left": left, "right": right}, tokens
