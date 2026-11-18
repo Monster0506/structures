@@ -4,8 +4,8 @@ from evaluator import evaluate_source
 
 
 if __name__ == "__main__":
-    if len(sys.argv) != 2:
-        print("Usage: python runner.py <program>")
+    if len(sys.argv) < 2:
+        print("Usage: python runner.py <program.v | source> [argument ...]")
         sys.exit(1)
 
     program = sys.argv[1]
@@ -15,7 +15,7 @@ if __name__ == "__main__":
         with open(program, "r", encoding="utf-8") as source_file:
             program = source_file.read().strip()
 
-    (value, status), _ = evaluate_source(program, source_path=source_path)
+    (value, status), _ = evaluate_source(program, {"argv": sys.argv[2:]}, source_path)
     if status == "exit":
         # Keep process termination outside the recursive evaluator.
         sys.exit(value)
