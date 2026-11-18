@@ -10,6 +10,7 @@ from unittest.mock import patch
 import parser
 import tokenizer
 from native_functions import NATIVE_FUNCTIONS
+from file_io import json_encode, json_decode
 
 # Ordinary call frames link to enclosing environments through "$PARENT".
 # Object fields with that spelling remain data. Chapter 13 deliberately
@@ -168,6 +169,8 @@ def require_vertex_value(value, seen=None):
 # No tokenizer keyword or parser production is needed.
 NATIVE_CONSTRUCTOR = make_native_function("native", ["name", "parameters"], native)
 IMPORT_FUNCTION = make_native_function("import", ["path"], import_program)
+JSON_ENCODE = make_native_function("jsonEncode", ["value"], json_encode)
+JSON_DECODE = make_native_function("jsonDecode", ["text"], json_decode)
 
 
 def require_index(index, base):
@@ -446,6 +449,10 @@ def evaluate(ast, environment):
                 return NATIVE_CONSTRUCTOR, None
             if identifier == "import":
                 return IMPORT_FUNCTION, None
+            if identifier == "jsonEncode":
+                return JSON_ENCODE, None
+            if identifier == "jsonDecode":
+                return JSON_DECODE, None
             raise ValueError(f"Unknown identifier: {identifier}")
 
     # ===== CHAPTER 11 =====

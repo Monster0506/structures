@@ -68,3 +68,18 @@ def write_json(path, value):
     data = text.encode("utf-8")
     target.write_bytes(data)
     return None
+
+
+def json_encode(value):
+    return json.dumps(json_value(value), ensure_ascii=False, allow_nan=False)
+
+
+def json_decode(text):
+    if type(text) is not str:
+        raise TypeError("jsonDecode argument must be a string")
+    try:
+        value = json.loads(text, parse_constant=reject_constant)
+    except json.JSONDecodeError as error:
+        raise ValueError(f"Invalid JSON: {error}") from None
+    json_value(value)
+    return value
