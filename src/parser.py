@@ -8,7 +8,7 @@ from tokenizer import tokenize
 #   program ::= statement_list
 #   statement_list ::= { ";" } statement { ";" { ";" } statement } { ";" }
 #   statement ::= print_statement | exit_expression
-#               | assert_statement | if_statement | while_statement
+#               | assert_statement | if_statement | switch_statement | while_statement
 #               | break_statement | continue_statement
 #               | function_definition | return_statement | expression
 #   assert_statement ::= "assert" expression "," <string>
@@ -33,6 +33,9 @@ from tokenizer import tokenize
 #   A bare statement is never a valid if/else body. An else that itself
 #   branches must write its own braces around a nested if_statement: this
 #   grammar has no "else if" shortcut.
+#   switch_statement ::= "switch" "(" expression ")"
+#                        "{" { case_clause } [ "default" ":" block ] "}"
+#   case_clause ::= "case" ( <number> | <string> | "true" | "false" ) ":" block
 #
 #   ===== CHAPTER 8: loops =====
 #   while_statement ::= "while" "(" expression ")" block
@@ -452,6 +455,8 @@ def parse_statement(tokens):
     # ===== CHAPTER 7 =====
     if tokens[0]["tag"] == "if":
         return parse_if_statement(tokens)
+    if tokens[0]["tag"] == "switch":
+        return parse_switch_statement(tokens)
     # ===== CHAPTER 8 =====
     if tokens[0]["tag"] == "while":
         return parse_while_statement(tokens)
@@ -519,6 +524,33 @@ def parse_if_statement(tokens):
         else_block, tokens = parse_block(tokens[1:])
     return {"tag": "if", "condition": condition, "then": then_block,
             "else": else_block}, tokens
+
+
+def parse_switch_statement(tokens):
+    tokens = require(tokens, "switch", "Expected 'switch'")
+    tokens = require(tokens, "(", "Expected '(' after 'switch'")
+    selector, tokens = parse_expression(tokens)
+    tokens = require(tokens, ")", "Expected ')' after switch selector")
+    tokens = require(tokens, "{", "Expected '{' to start switch cases")
+    cases = []
+    while tokens[0]["tag"] == "case":
+        tokens = tokens[1:]
+        if tokens[0]["tag"] not in ("number", "string", "true", "false"):
+            raise SyntaxError(f"Expected a literal case label, got {tokens[0]}")
+        label, rest = parse_factor(tokens)
+        key = (label["tag"], label["value"])
+        if key in [(case["tag"], case["value"]) for case, _ in cases]:
+            raise SyntaxError(f"Duplicate case label, got {tokens[0]}")
+        tokens = require(rest, ":", "Expected ':' after case label")
+        body, tokens = parse_block(tokens)
+        cases.append((label, body))
+    default = None
+    if tokens[0]["tag"] == "default":
+        tokens = require(tokens[1:], ":", "Expected ':' after 'default'")
+        default, tokens = parse_block(tokens)
+    tokens = require(tokens, "}", "Expected '}' to close switch cases")
+    return {"tag": "switch", "selector": selector, "cases": cases,
+            "default": default}, tokens
 
 
 def parse_while_statement(tokens):

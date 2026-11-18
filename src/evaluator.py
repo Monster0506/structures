@@ -938,6 +938,17 @@ def evaluate(ast, environment):
             return evaluate(ast["else"], environment)
         return None, None
 
+    if ast["tag"] == "switch":
+        selector, status = evaluate(ast["selector"], environment)
+        if status is not None:
+            return selector, status
+        for label, body in ast["cases"]:
+            if vertex_equal(selector, label["value"]):
+                return evaluate(body, environment)
+        if ast["default"] is not None:
+            return evaluate(ast["default"], environment)
+        return None, None
+
     # ===== CHAPTER 8: loops =====
     if ast["tag"] == "break":
         return None, "break"
