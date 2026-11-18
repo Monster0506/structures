@@ -550,6 +550,24 @@ def evaluate(ast, environment):
             if status is not None:
                 return value, status
             arguments.append(value)
+        keywords = []
+        for name, argument_ast in ast.get("keywords", []):
+            value, status = evaluate(argument_ast, environment)
+            if status is not None:
+                return value, status
+            keywords.append((name, value))
+        if keywords:
+            bound = dict(zip(callee["parameters"], arguments))
+            for name, value in keywords:
+                if name not in callee["parameters"]:
+                    raise TypeError(f"Unknown argument name: {name}")
+                if name in bound:
+                    raise TypeError(f"Duplicate argument: {name}")
+                bound[name] = value
+            for name in callee["parameters"]:
+                if name not in bound:
+                    raise TypeError(f"Missing argument: {name}")
+            arguments = [bound[name] for name in callee["parameters"]]
         if len(arguments) != len(callee["parameters"]):
             raise TypeError(
                 f"Function expects {len(callee['parameters'])} argument(s), "
