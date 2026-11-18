@@ -860,6 +860,26 @@ def evaluate(ast, environment):
             return left > right, None
         return left >= right, None
 
+    if ast["tag"] == "<<":
+        left, status = evaluate(ast["left"], environment)
+        if status is not None:
+            return left, status
+        right, status = evaluate(ast["right"], environment)
+        if status is not None:
+            return right, status
+        for operand in (left, right):
+            if not is_function(operand):
+                raise TypeError("Composition requires two functions")
+            if len(operand["parameters"]) != 1:
+                raise TypeError("Composition requires functions of one parameter")
+        inner = {"tag": "call", "callee": {"tag": "identifier", "value": "g"},
+                 "arguments": [{"tag": "identifier", "value": "x"}]}
+        outer = {"tag": "call", "callee": {"tag": "identifier", "value": "f"},
+                 "arguments": [inner]}
+        body = {"tag": "return", "expression": outer}
+        return evaluate({"tag": "function", "parameters": ["x"], "body": body},
+                        {"f": left, "g": right})
+
     # Python's operators deliberately provide the Chapter 3 behavior:
     # string + string concatenates, string * integer repeats, and integer *
     # string repeats in the opposite order. Numeric behavior is unchanged.
