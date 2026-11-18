@@ -64,7 +64,7 @@ from tokenizer import tokenize
 #   ===== CHAPTER 9: postfix indexing applies to any factor =====
 #   unary ::= "-" unary | complex_expression
 #   complex_expression ::= factor { index_suffix | call_suffix }
-#   index_suffix ::= "[" expression "]" | "." <identifier>
+#   index_suffix ::= "[" expression "]" | "." <identifier> | "?." <identifier>
 #   An index_suffix chain produces "complex" nodes, not "index" nodes, on
 #   purpose: a later chapter's function calls are the same postfix form
 #   with a different suffix, and extend this same chain instead of
@@ -296,21 +296,28 @@ def parse_complex_suffixes(node, tokens):
     # funcs[0](x), makeAdder(1)(2), and list[i].method() are all one
     # pass through this while loop, same as the mixed [] and . chains
     # chapter 10 already allowed.
-    while tokens[0]["tag"] in ("[", ".", "("):
+    optional = False
+    while tokens[0]["tag"] in ("[", ".", "?.", "("):
         if tokens[0]["tag"] == "[":
             index, tokens = parse_expression(tokens[1:])
             tokens = require(tokens, "]", "Expected ']' after index")
             node = {"tag": "complex", "base": node, "index": index}
-        elif tokens[0]["tag"] == ".":
+        elif tokens[0]["tag"] in (".", "?."):
+            link = tokens[0]["tag"]
             tokens = tokens[1:]
             if tokens[0]["tag"] != "identifier":
-                raise SyntaxError(f"Expected a field name after '.', got {tokens[0]}")
+                raise SyntaxError(f"Expected a field name after '{link}', got {tokens[0]}")
             index = {"tag": "string", "value": tokens[0]["value"]}
             tokens = tokens[1:]
             node = {"tag": "complex", "base": node, "index": index}
+            if link == "?.":
+                node["optional"] = True
+                optional = True
         else:
             arguments, tokens = parse_call_arguments(tokens)
             node = {"tag": "call", "callee": node, "arguments": arguments}
+    if optional:
+        node = {"tag": "optional", "expression": node}
     return node, tokens
 
 
