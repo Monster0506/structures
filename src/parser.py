@@ -109,7 +109,8 @@ from tokenizer import tokenize
 #   type_expression ::= "type" "(" expression ")"
 #
 #   ===== CHAPTER 9: list literals, length, slice, head, and tail =====
-#   list_expression ::= "[" [ expression { "," expression } ] "]"
+#   list_expression ::= "[" [ expression ( "for" <identifier> "in" expression
+#                                        | { "," expression } ) ] "]"
 #   length_expression ::= "length" "(" expression ")"
 #   slice_expression ::= "slice" "(" expression "," expression "," expression ")"
 #   head_expression ::= "head" "(" expression ")"
@@ -239,12 +240,21 @@ def parse_object_expression(tokens):
 
 def parse_list_expression(tokens):
     # ===== CHAPTER 9 =====
-    # list_expression ::= "[" [ expression { "," expression } ] "]"
+    # list_expression ::= "[" [ expression ( "for" <identifier> "in" expression
+    #                                      | { "," expression } ) ] "]"
     tokens = require(tokens, "[", "Expected '['")
     items = []
     if tokens[0]["tag"] != "]":
         item, tokens = parse_expression(tokens)
         items.append(item)
+        if tokens[0]["tag"] == "for":
+            variable = tokens[1]
+            tokens = require(tokens[1:], "identifier", "Expected a loop variable after 'for'")
+            tokens = require(tokens, "in", "Expected 'in' after loop variable")
+            source, tokens = parse_expression(tokens)
+            tokens = require(tokens, "]", "Expected ']' to close list comprehension")
+            return {"tag": "list", "items": items, "variable": variable["value"],
+                    "source": source}, tokens
         while tokens[0]["tag"] == ",":
             item, tokens = parse_expression(tokens[1:])
             items.append(item)
