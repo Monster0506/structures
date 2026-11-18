@@ -835,30 +835,36 @@ def evaluate(ast, environment):
         left, status = evaluate(ast["left"], environment)
         if status is not None:
             return left, status
-        right, status = evaluate(ast["right"], environment)
-        if status is not None:
-            return right, status
-        numeric = type(left) in (int, float) and type(right) in (int, float)
-        if ast["tag"] in ("==", "!="):
-            # Integers and floats share numeric equality. Other types must
-            # match: true is not 1, and the string "1" is not the number 1.
-            # ===== CHAPTER 9: lists compare structurally, recursively =====
-            equal = vertex_equal(left, right)
-            if ast["tag"] == "==":
-                return equal, None
-            return not equal, None
-        strings = type(left) is str and type(right) is str
-        if not (numeric or strings):
-            raise TypeError("Ordering comparisons require two numbers or two strings")
-        # Python string ordering is lexicographic by Unicode code point:
-        # the first unequal character decides; a matching shorter prefix wins.
-        if ast["tag"] == "<":
-            return left < right, None
-        if ast["tag"] == "<=":
-            return left <= right, None
-        if ast["tag"] == ">":
-            return left > right, None
-        return left >= right, None
+        pairs = [(ast["tag"], ast["right"])] + ast.get("chain", [])
+        for operator, operand in pairs:
+            right, status = evaluate(operand, environment)
+            if status is not None:
+                return right, status
+            numeric = type(left) in (int, float) and type(right) in (int, float)
+            if operator in ("==", "!="):
+                # Integers and floats share numeric equality. Other types must
+                # match: true is not 1, and the string "1" is not the number 1.
+                # ===== CHAPTER 9: lists compare structurally, recursively =====
+                equal = vertex_equal(left, right)
+                result = equal if operator == "==" else not equal
+            else:
+                strings = type(left) is str and type(right) is str
+                if not (numeric or strings):
+                    raise TypeError("Ordering comparisons require two numbers or two strings")
+                # Python string ordering is lexicographic by Unicode code point:
+                # the first unequal character decides; a matching shorter prefix wins.
+                if operator == "<":
+                    result = left < right
+                elif operator == "<=":
+                    result = left <= right
+                elif operator == ">":
+                    result = left > right
+                else:
+                    result = left >= right
+            if not result:
+                return False, None
+            left = right
+        return True, None
 
     # Python's operators deliberately provide the Chapter 3 behavior:
     # string + string concatenates, string * integer repeats, and integer *
