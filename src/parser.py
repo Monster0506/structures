@@ -203,6 +203,9 @@ def parse_factor(tokens):
     if token["tag"] == "slice":
         return parse_slice_expression(tokens)
 
+    if token["tag"] == "range":
+        return parse_range_expression(tokens)
+
     # ===== CHAPTER 11: function literal =====
     if token["tag"] == "function":
         return parse_function_expression(tokens)
@@ -266,6 +269,18 @@ def parse_slice_expression(tokens):
     end, tokens = parse_expression(tokens)
     tokens = require(tokens, ")", "Expected ')' after slice end")
     return {"tag": "slice", "expression": sequence, "start": start, "end": end}, tokens
+
+
+def parse_range_expression(tokens):
+    tokens = require(tokens, "range", "Expected 'range'")
+    tokens = require(tokens, "(", "Expected '(' after 'range'")
+    start, tokens = parse_expression(tokens)
+    tokens = require(tokens, ",", "Expected ',' after range start")
+    stop, tokens = parse_expression(tokens)
+    tokens = require(tokens, ",", "Expected ',' after range stop")
+    step, tokens = parse_expression(tokens)
+    tokens = require(tokens, ")", "Expected ')' after range step")
+    return {"tag": "range", "start": start, "stop": stop, "step": step}, tokens
 
 
 def parse_complex_suffixes(node, tokens):

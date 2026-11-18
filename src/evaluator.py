@@ -642,6 +642,28 @@ def evaluate(ast, environment):
             raise IndexError("Slice start must not be greater than end")
         return value[start:end], None
 
+    if ast["tag"] == "range":
+        arguments = []
+        for key in ("start", "stop", "step"):
+            value, status = evaluate(ast[key], environment)
+            if status is not None:
+                return value, status
+            arguments.append(value)
+        for index, value in enumerate(arguments):
+            if type(value) is str and re.fullmatch(r"[+-]?(?:\d*\.\d+|\d+\.\d*|\d+)", value.strip()):
+                value = float(value) if "." in value else int(value)
+            if type(value) is float and value.is_integer():
+                value = int(value)
+            if type(value) is not int:
+                raise TypeError("range arguments must be whole numbers")
+            arguments[index] = value
+        if arguments[2] == 0:
+            raise ValueError("range step must not be zero")
+        values = range(*arguments)
+        if len(values) > 1000000:
+            raise ValueError("range must not produce more than 1000000 elements")
+        return list(values), None
+
     # ===== CHAPTER 3: dedicated input expression =====
     if ast["tag"] == "input":
         prompt_ast = ast["prompt"]
