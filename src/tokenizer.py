@@ -63,6 +63,7 @@ patterns = [
 
     # ===== CHAPTER 12: update an existing lexical binding =====
     (r"set\b", "set"),
+    (r"const\b", "const"),
 
     # ===== CHAPTER 11: function keywords =====
     (r"function\b", "function"),
